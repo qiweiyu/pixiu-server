@@ -20,6 +20,7 @@
     "eslint": "^4.19.1",
     "eslint-config-egg": "^7.0.0",
     "lodash": "^4.17.10",
+    "moment": "^2.22.2",
     "qtumjs-lib": "0.0.7",
     "uuid": "^3.2.1",
     "webstorm-disable-index": "^1.2.0"

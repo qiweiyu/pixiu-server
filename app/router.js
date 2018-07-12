@@ -9,5 +9,5 @@ module.exports = app => {
   // passport
   router.post('/api/passport/login', controller.api.passport.login);
   // history
-  router.get('/api/history/test', controller.api.history.test);
+  router.get('/api/history/:coin', controller.api.history.list);
 };

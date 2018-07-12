@@ -18,5 +18,13 @@ module.exports = appInfo => {
       enable: false,
     },
   };
+
+  config.coins = [
+    'bitcoin',
+    'ethereum',
+    'qtum',
+    'eos',
+  ];
+
   return config;
 };

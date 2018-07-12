@@ -1,6 +1,7 @@
 'use strict';
 
 const Service = require('./coinMarketCap');
+const moment = require('moment');
 const Sleep = (time = 3000) => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -39,9 +40,13 @@ class CoinMarketCapSyncService extends Service {
     return `CREATE TABLE \`${tableName}\` (
       \`id\` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
       \`time\` bigint(20) unsigned NOT NULL,
+      \`formatTime\` bigint(20) NOT NULL,
+      \`date\` varchar(8) NOT NULL,
       \`price\` double NOT NULL,
       PRIMARY KEY (\`id\`),
-      INDEX i_time (\`time\`)
+      INDEX i_time (\`time\`),
+      INDEX i_formatTime (\`formatTime\`),
+      INDEX i_date (\`date\`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`;
   }
 
@@ -64,6 +69,9 @@ class CoinMarketCapSyncService extends Service {
   async runADay(symbol, type, time) {
     const fetchRes = await this.fetchByDay(symbol, time);
     const data = fetchRes[`price_${type}`];
+    if (!data) {
+      return false;
+    }
     let beginTime = Date.now();
     let endTime = 0;
     const dataMap = {};
@@ -76,27 +84,34 @@ class CoinMarketCapSyncService extends Service {
     (await this.app.mysql.query(`select * from ${tableName} where time >= ${beginTime} and time <= ${endTime}`)).forEach(item => {
       dataMap[item.time] = null;
     });
-    console.log(dataMap);
+    const formatBeginTime = Math.round(beginTime / 60 / 1000) * 60 * 1000;
+    const dateBeginTime = Math.floor(beginTime / (86400 * 1000)) * 86400 * 1000;
     for (const time in dataMap) {
       const price = dataMap[time];
+      const formatTime = Math.round((time - formatBeginTime) / 300 / 1000) * 300 * 1000 + dateBeginTime;
       if (price) {
+        const date = moment(new Date(Number(time))).utc().format('YYYYMMDD');
         await this.app.mysql.insert(tableName, {
           time,
+          formatTime,
+          date,
           price,
         });
       }
     }
+    return true;
   }
 
   async run(symbol) {
     const type = 'usd';
     const lastTime = await this.fetchLastTime(symbol, type);
     let insertBeginTime = Date.now();
+    let res = false;
     do {
-      await this.runADay(symbol, type, insertBeginTime);
+      res = await this.runADay(symbol, type, insertBeginTime);
       await Sleep();
       insertBeginTime -= 86400000;
-    } while (insertBeginTime > lastTime);
+    } while (res && insertBeginTime > lastTime);
   }
 }
 

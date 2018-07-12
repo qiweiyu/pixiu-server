@@ -11,7 +11,7 @@ class SyncCoinmarketcap extends Subscription {
   }
 
   async subscribe() {
-    [ 'bitcoin' ].forEach(symbol => {
+    this.app.config.coins.forEach(symbol => {
       this.service.coinMarketCapSync.run(symbol);
     });
   }

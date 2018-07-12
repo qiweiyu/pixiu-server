@@ -13,6 +13,10 @@ module.exports = () => {
       signedMessage: [true, 'string'],
     },
     // history
-    '/api/history/test': {},
+    '/api/history/:coin': {
+      coin: [true, 'string'],
+      begin: [false, 'int', 0],
+      end: [false, 'int', 0],
+    },
   };
 };
