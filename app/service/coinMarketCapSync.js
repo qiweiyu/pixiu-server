@@ -11,6 +11,7 @@ const Sleep = (time = 3000) => {
 };
 const host = 'graphs2.coinmarketcap.com';
 const protocol = 'https';
+const fetchFirstDay = moment('2017-01-01UTC').valueOf();
 
 class CoinMarketCapSyncService extends Service {
   fetchPriceUrl(symbol, start, end) {
@@ -60,7 +61,7 @@ class CoinMarketCapSyncService extends Service {
       console.log(e);
       if (e.code === 'ER_NO_SUCH_TABLE') {
         await this.app.mysql.query(this.getTableCreateSql(symbol, type));
-        return 0;
+        return fetchFirstDay;
       }
       throw e;
     }
@@ -104,14 +105,14 @@ class CoinMarketCapSyncService extends Service {
 
   async run(symbol) {
     const type = 'usd';
-    const lastTime = await this.fetchLastTime(symbol, type);
-    let insertBeginTime = Date.now();
+    let lastTime = await this.fetchLastTime(symbol, type);
+    const now = Date.now();
     let res = false;
     do {
-      res = await this.runADay(symbol, type, insertBeginTime);
+      res = await this.runADay(symbol, type, lastTime);
       await Sleep();
-      insertBeginTime -= 86400000;
-    } while (res && insertBeginTime > lastTime);
+      lastTime += 86400000;
+    } while (res && now > lastTime);
   }
 }
 

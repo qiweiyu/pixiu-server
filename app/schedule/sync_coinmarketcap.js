@@ -1,6 +1,7 @@
 'use strict';
 
 const Subscription = require('egg').Subscription;
+let locker = false;
 
 class SyncCoinmarketcap extends Subscription {
   static get schedule() {
@@ -11,9 +12,14 @@ class SyncCoinmarketcap extends Subscription {
   }
 
   async subscribe() {
-    this.app.config.coins.forEach(symbol => {
-      this.service.coinMarketCapSync.run(symbol);
-    });
+    if (locker) {
+      console.log('Not Run Cause Locker');
+    } else {
+      console.log('Run Sync for bitcoin');
+      locker = true;
+      await this.service.coinMarketCapSync.run('bitcoin');
+      locker = false;
+    }
   }
 }
 

@@ -21,9 +21,9 @@ module.exports = appInfo => {
 
   config.coins = [
     'bitcoin',
-    'ethereum',
-    'qtum',
-    'eos',
+  //  'ethereum',
+  //  'qtum',
+  //  'eos',
   ];
 
   return config;
