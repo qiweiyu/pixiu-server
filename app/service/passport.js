@@ -7,14 +7,14 @@ class PassportService extends Service {
     if (!accessToken) {
       return this.service.user.loginRequired();
     }
-    const [address, token] = accessToken.split('@');
+    const [ address, token ] = accessToken.split('@');
     const session = await this.service.session.get(address);
     if (!session || session.token !== token) {
       return this.service.user.loginRequired();
-    } else {
-      this.service.session.refresh(address);
-      this.ctx.user = { address, token };
     }
+    this.service.session.refresh(address);
+    this.ctx.user = { address, token };
+
   }
 
   async nonce() {
@@ -32,11 +32,11 @@ class PassportService extends Service {
     try {
       const checkRes = await this.verifySignedMsg(sid, address, signedMessage);
       if (!checkRes) {
-        throw this.ctx.errMap['MESSAGE_VERIFY_FAIL'];
+        throw this.ctx.errMap.MESSAGE_VERIFY_FAIL;
       }
     } catch (e) {
       console.log(e);
-      throw this.ctx.errMap['MESSAGE_VERIFY_FAIL'];
+      throw this.ctx.errMap.MESSAGE_VERIFY_FAIL;
     }
     return this.service.user.login(address);
   }

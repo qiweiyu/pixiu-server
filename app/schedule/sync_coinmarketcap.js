@@ -17,7 +17,11 @@ class SyncCoinmarketcap extends Subscription {
     } else {
       console.log('Run Sync for bitcoin');
       locker = true;
-      await this.service.coinMarketCapSync.run('bitcoin');
+      try {
+        await this.service.coinMarketCapSync.run('bitcoin');
+      } catch (e) {
+        console.log(e);
+      }
       locker = false;
     }
   }

@@ -38,8 +38,7 @@ module.exports = () => {
     let res;
     if (type.startsWith('regex|')) {
       res = value;
-    }
-    else {
+    } else {
       switch (type) {
         case 'string' :
         case 'name' :

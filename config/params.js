@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = () => {
   return {
     // api name: {
@@ -8,15 +10,15 @@ module.exports = () => {
     // passport
     '/api/passport/nonce': {},
     '/api/passport/login': {
-      sid: [true, 'string'],
-      address: [true, 'string'],
-      signedMessage: [true, 'string'],
+      sid: [ true, 'string' ],
+      address: [ true, 'string' ],
+      signedMessage: [ true, 'string' ],
     },
     // history
     '/api/history/:coin': {
-      coin: [true, 'string'],
-      begin: [false, 'int', 0],
-      end: [false, 'int', 0],
+      coin: [ true, 'string' ],
+      begin: [ false, 'int', 0 ],
+      end: [ false, 'int', 0 ],
     },
   };
 };

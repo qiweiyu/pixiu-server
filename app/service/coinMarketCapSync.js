@@ -3,7 +3,7 @@
 const Service = require('./coinMarketCap');
 const moment = require('moment');
 const Sleep = (time = 3000) => {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     setTimeout(() => {
       resolve();
     }, time);
@@ -11,7 +11,7 @@ const Sleep = (time = 3000) => {
 };
 const host = 'graphs2.coinmarketcap.com';
 const protocol = 'https';
-const fetchFirstDay = moment('2017-01-01UTC').valueOf();
+const fetchFirstDay = moment(new Date('2017-01-01UTC')).valueOf();
 
 class CoinMarketCapSyncService extends Service {
   fetchPriceUrl(symbol, start, end) {
@@ -52,19 +52,20 @@ class CoinMarketCapSyncService extends Service {
   }
 
   async fetchLastTime(symbol, type) {
+    let lastTime = 0;
     try {
       const res = (await this.app.mysql.select(this.getTableName(symbol, type), {
-        orders: [['time', 'desc']],
+        orders: [[ 'time', 'desc' ]],
       }))[0];
-      return Number(res && res.time);
+      lastTime = res && res.time;
     } catch (e) {
       console.log(e);
       if (e.code === 'ER_NO_SUCH_TABLE') {
         await this.app.mysql.query(this.getTableCreateSql(symbol, type));
-        return fetchFirstDay;
       }
       throw e;
     }
+    return lastTime ? Number(lastTime) : fetchFirstDay;
   }
 
   async runADay(symbol, type, time) {
@@ -106,13 +107,13 @@ class CoinMarketCapSyncService extends Service {
   async run(symbol) {
     const type = 'usd';
     let lastTime = await this.fetchLastTime(symbol, type);
-    const now = Date.now();
+    const endTime = Date.now() + 86400000;
     let res = false;
     do {
       res = await this.runADay(symbol, type, lastTime);
       await Sleep();
       lastTime += 86400000;
-    } while (res && now > lastTime);
+    } while (res && endTime > lastTime);
   }
 }
 
