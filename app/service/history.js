@@ -21,7 +21,7 @@ class HistoryService extends Service {
       where: {
         formatTime: formatTimeList,
       },
-      orders: [['time', 'asc']],
+      orders: [[ 'time', 'asc' ]],
     })).map(item => {
       return {
         time: item.time,
@@ -33,12 +33,12 @@ class HistoryService extends Service {
   async parseStartEnd(symbol, type, begin, end) {
     const tableName = this.getTableName(symbol, type);
     let res = await this.app.mysql.select(tableName, {
-      orders: [['time', 'asc']],
+      orders: [[ 'time', 'asc' ]],
       limit: 1,
     });
     const minBegin = Number(res && res[0] && res[0].time);
     res = await this.app.mysql.select(tableName, {
-      orders: [['time', 'desc']],
+      orders: [[ 'time', 'desc' ]],
       limit: 1,
     });
     const maxEnd = Number(res && res[0] && res[0].time);

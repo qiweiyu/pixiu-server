@@ -20,9 +20,9 @@ class SessionService extends Service {
     };
     if (await this.get(id)) {
       return await this.app.mysql.update(TableName, data);
-    } else {
-      return await this.app.mysql.insert(TableName, data);
     }
+    return await this.app.mysql.insert(TableName, data);
+
   }
 
   async refresh(id) {
