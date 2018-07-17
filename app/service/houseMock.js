@@ -25,6 +25,8 @@ class HouseMockService extends House {
     return {
       money: this.money,
       amount: this.amount,
+      totalMoney: this.amount * this.currentData.price + Number(this.money),
+      totalAmount: Number(this.amount) + this.money / this.currentData.price,
     };
   }
 
