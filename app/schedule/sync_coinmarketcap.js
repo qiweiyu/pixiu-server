@@ -13,7 +13,7 @@ class SyncCoinmarketcap extends Subscription {
 
   async subscribe() {
     if (locker) {
-      console.log('Not Run Cause Locker');
+      console.log('Not Run Sync CMC Cause Locker');
     } else {
       console.log('Run Sync for bitcoin');
       locker = true;
