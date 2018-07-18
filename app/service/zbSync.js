@@ -9,13 +9,24 @@ const Sleep = (time = 1000) => {
   });
 };
 const host = 'api.zb.cn';
-const protocol = 'https';
+const protocol = 'http';
 
 class ZbSyncService extends Service {
-  async fetch(url) {
+  async fetch(url, params = {}) {
+    let query = '';
+    if (params) {
+      query = [];
+      for (const k in params) {
+        const v = params[k];
+        if (v !== undefined) {
+          query.push(`${k}=${v}`);
+        }
+      }
+      query = query.join('&');
+    }
     let res;
     try {
-      res = await this.app.curl(`${protocol}://${host}${url}`, {
+      res = await this.app.curl(`${protocol}://${host}${url}?${query}`, {
         dataType: 'json',
       });
       return res.data;
@@ -36,14 +47,14 @@ class ZbSyncService extends Service {
       \`close\` double NOT NULL,
       \`amount\` double NOT NULL,
       PRIMARY KEY (\`id\`),
-      INDEX i_time (\`time\`),
+      INDEX i_time (\`time\`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`;
   }
 
   async fetchLastTime(symbol, type) {
     let lastTime = 0;
     try {
-      const res = (await this.app.mysql.select(this.getTableName(symbol, type), {
+      const res = (await this.app.mysql.select(this.getKlineTableName(symbol, type), {
         orders: [['time', 'desc']],
       }))[0];
       lastTime = res && res.time;
@@ -57,38 +68,45 @@ class ZbSyncService extends Service {
     return lastTime ? Number(lastTime) : 0;
   }
 
-  async fetchALine(symbol, type, since) {
-    const fetchRes = await this.fetch(`/data/v1/kline?market=${symbol}_qc&type=${type}&since=${since}`);
-    console.log(fetchRes);
-    return true; //////
-    const data = fetchRes[`price_${type}`];
-    if (!data) {
+  async fetchALine(symbol, type) {
+    const since = await this.fetchLastTime(symbol, type);
+    const params = {
+      market: `${symbol}_qc`,
+      type,
+      since,
+    };
+    let fetchRes = await this.fetch('/data/v1/kline', params);
+    if (fetchRes.code === 3005) {
+      await Sleep();
+      params.since = undefined;
+      fetchRes = await this.fetch('/data/v1/kline', params);
+    }
+    const klineData = fetchRes.data;
+    if (!klineData) {
       return false;
     }
     let beginTime = Date.now();
     let endTime = 0;
     const dataMap = {};
-    data.forEach(item => {
+    klineData.forEach(item => {
       beginTime = Math.min(item[0], beginTime);
       endTime = Math.max(item[0], endTime);
-      dataMap[item[0]] = item[1];
+      dataMap[item[0]] = item;
     });
-    const tableName = this.getTableName(symbol, type);
+    const tableName = this.getKlineTableName(symbol, type);
     (await this.app.mysql.query(`select * from ${tableName} where time >= ${beginTime} and time <= ${endTime}`)).forEach(item => {
       dataMap[item.time] = null;
     });
-    const formatBeginTime = Math.round(beginTime / 60 / 1000) * 60 * 1000;
-    const dateBeginTime = Math.floor(beginTime / (86400 * 1000)) * 86400 * 1000;
     for (const time in dataMap) {
-      const price = dataMap[time];
-      const formatTime = Math.round((time - formatBeginTime) / 300 / 1000) * 300 * 1000 + dateBeginTime;
-      if (price) {
-        const date = moment(new Date(Number(time))).utc().format('YYYYMMDD');
+      const data = dataMap[time];
+      if (data) {
         await this.app.mysql.insert(tableName, {
           time,
-          formatTime,
-          date,
-          price,
+          open: data[1],
+          high: data[2],
+          low: data[3],
+          close: data[4],
+          amount: data[5],
         });
       }
     }
@@ -102,19 +120,19 @@ class ZbSyncService extends Service {
       'ltc', 'qtum', 'ae', 'true', 'chat',
       'ada', 'bitcny', 'ink', 'btm', 'bth',
       'tv', 'doge', 'btp', 'epc', 'bcw',
-      'hlc', 'btn', 'safe'
+      'hlc', 'btn', 'safe',
     ];
     const typeList = [
       '1min', '1hour', '1day',
     ];
-    let lastTime = await this.fetchLastTime(symbol, type);
-    const now = Date.now();
-    let res = false;
-    do {
-      res = await this.runADay(symbol, type, lastTime);
-      await Sleep();
-      lastTime += 86400000;
-    } while (res && now > lastTime);
+    for (let i = 0; i < typeList.length; i++) {
+      const type = typeList[i];
+      for (let j = 0; j < symbolList.length; j++) {
+        const symbol = symbolList[j];
+        await this.fetchALine(symbol, type);
+        await Sleep();
+      }
+    }
   }
 }
 
